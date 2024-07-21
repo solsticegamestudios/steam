@@ -210,7 +210,9 @@ class WebAuth(object):
              'encrypted_password': account_encrypted_password,
              'encryption_timestamp': time_stamp,
              'remember_login': '1',
-             'platform_type': EAuthTokenPlatformType.WebBrowser,
+             # with WebBrowser, JWT audience contains just web
+             # but with SteamClient, JWT audience contains client and web
+             'platform_type': EAuthTokenPlatformType.SteamClient,
              'persistence': ESessionPersistence.Persistent,
              'website_id': 'Community',
              },
