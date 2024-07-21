@@ -387,7 +387,7 @@ class WebAuth(object):
                 )
             except LoginIncorrect:
                 prompt = ("Enter password for %s: " if not password else "Invalid password for %s. Enter password:")
-                password = getpass(prompt % repr(self.username))
+                password = getpass(prompt % repr(username))
                 continue
             except TwoFactorAuthNotProvided:
                 # 2FA handling
