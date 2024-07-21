@@ -391,8 +391,10 @@ class EOSType(SteamIntEnum):
     Win2012R2 = 15
     Windows10 = 16
     Win2016 = 17
-    WinMAX = 18
-    Max = 26
+    Win2019 = 18
+    Win2022 = 19
+    Win11 = 20
+    WinMAX = 21
 
 
 class EFriendRelationship(SteamIntEnum):
