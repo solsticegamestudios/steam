@@ -61,7 +61,7 @@ from getpass import getpass
 import six
 import requests
 
-from steam.enums.proto import EAuthSessionGuardType
+from steam.enums.proto import EAuthSessionGuardType, EAuthTokenPlatformType, ESessionPersistence
 from steam.steamid import SteamID
 from steam.utils.web import generate_session_id
 from steam.core.crypto import rsa_publickey, pkcs1v15_encrypt
@@ -210,8 +210,8 @@ class WebAuth(object):
              'encrypted_password': account_encrypted_password,
              'encryption_timestamp': time_stamp,
              'remember_login': '1',
-             'platform_type': '2',
-             'persistence': '1',
+             'platform_type': EAuthTokenPlatformType.WebBrowser,
+             'persistence': ESessionPersistence.Persistent,
              'website_id': 'Community',
              },
             'IAuthentication',
