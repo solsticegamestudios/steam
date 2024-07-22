@@ -5,6 +5,7 @@ from steam.client import SteamClient
 from steam.core.msg import MsgProto
 from steam.enums.emsg import EMsg
 from steam.utils.proto import proto_to_dict
+from steam.webauth import WebAuth
 import vdf
 
 LOG = logging.getLogger("Steam Worker")
@@ -15,7 +16,6 @@ class SteamWorker(object):
         self.logged_on_once = False
 
         self.steam = client = SteamClient()
-        client.set_credential_location(".")
 
         @client.on("error")
         def handle_error(result):
@@ -27,8 +27,7 @@ class SteamWorker(object):
 
         @client.on("channel_secured")
         def send_login():
-            if self.logged_on_once and self.steam.relogin_available:
-                self.steam.relogin()
+            client.login(self.username, access_token=self.access_token)
 
         @client.on("logged_on")
         def handle_after_logon():
@@ -44,17 +43,19 @@ class SteamWorker(object):
         @client.on("disconnected")
         def handle_disconnect():
             LOG.info("Disconnected.")
-
-            if self.logged_on_once:
-                LOG.info("Reconnecting...")
-                client.reconnect(maxdelay=30)
+            LOG.info("Reconnecting...")
+            client.reconnect(maxdelay=30)
 
         @client.on("reconnect")
         def handle_reconnect(delay):
             LOG.info("Reconnect in %ds...", delay)
 
     def prompt_login(self):
-        self.steam.cli_login()
+        webauth = WebAuth()
+        webauth.cli_login(input("Steam user: "))
+        self.username = webauth.username
+        self.access_token = webauth.refresh_token
+        self.steam.connect()
 
     def close(self):
         if self.steam.logged_on:

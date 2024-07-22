@@ -1,13 +1,14 @@
-from __future__ import print_function
 from steam.client import SteamClient
 from steam.enums import EResult
-
-client = SteamClient()
+from steam.webauth import WebAuth
 
 print("One-off login recipe")
 print("-"*20)
 
-result = client.cli_login()
+webauth = WebAuth()
+webauth.cli_login(input("Steam user: "))
+client = SteamClient()
+result = client.login(webauth.username, access_token=webauth.refresh_token)
 
 if result != EResult.OK:
     print("Failed to login: %s" % repr(result))
