@@ -248,7 +248,7 @@ class WebAuth(object):
             self.refresh_token = resp['response']['refresh_token']
             self.access_token = resp['response']['access_token']
         except KeyError:
-            raise TwoFactorAuthNotProvided('Authentication requires 2fa token, which is not provided or invalid')
+            raise TwoFactorCodeRequired('Authentication requires 2fa token, which is not provided or invalid')
 
     def _finalizeLogin(self):
         self.sessionID = generate_session_id()
@@ -389,7 +389,7 @@ class WebAuth(object):
                 prompt = ("Enter password for %s: " if not password else "Invalid password for %s. Enter password:")
                 password = getpass(prompt % repr(username))
                 continue
-            except TwoFactorAuthNotProvided:
+            except TwoFactorCodeRequired:
                 # 2FA handling
                 allowed = set(self.allowed_confirmations)
                 if allowed.isdisjoint(SUPPORTED_AUTH_TYPES):
@@ -419,7 +419,7 @@ class WebAuth(object):
                         try:
                             self._pollLoginStatus() # test to see if they've authenticated via app
                             break
-                        except TwoFactorAuthNotProvided:
+                        except TwoFactorCodeRequired:
                             # they've not authenticated via the app, let's see if we can use their provided code
                             pass
 
@@ -429,7 +429,7 @@ class WebAuth(object):
                         try:
                             self._pollLoginStatus()
                             break
-                        except TwoFactorAuthNotProvided:
+                        except TwoFactorCodeRequired:
                             print("Invalid auth code. Please try again")
                             twofactor_code = ''
                             continue
@@ -569,10 +569,6 @@ class WebAuthException(Exception):
 
 
 class AuthTypeNotSupported(WebAuthException):
-    pass
-
-
-class TwoFactorAuthNotProvided(WebAuthException):
     pass
 
 
