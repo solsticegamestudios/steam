@@ -18,5 +18,5 @@ persistent_login.py
 
 In this example, after the login prompt, the client will remain connected until interrupted.
 The client will attempt to reconnect after losing network connectivity or when steam is down.
-A file file is persisted to disk with the account information: ``credentials.json``.
+A json file is persisted to disk with the account information: ``credentials.json``.
 
