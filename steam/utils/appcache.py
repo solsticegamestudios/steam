@@ -103,7 +103,7 @@ def parse_appinfo(fp, mapper=None):
 
                 if field_name[-1] == 0:
                     field_name = field_name[0:-1]
-                    field_name = field_name.decode("utf-8")
+                    field_name = field_name.decode('utf-8', 'replace')
 
                     key_table.append(field_name)
                     break
