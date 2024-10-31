@@ -59,6 +59,7 @@ from base64 import b64encode
 from getpass import getpass
 import requests
 
+from steam.enums.common import EResult
 from steam.enums.proto import EAuthSessionGuardType, EAuthTokenPlatformType, ESessionPersistence
 from steam.steamid import SteamID
 from steam.utils.web import generate_session_id
@@ -208,10 +209,16 @@ class WebAuth:
             'BeginAuthSessionViaCredentials',
             1
         )
-        self.client_id = resp['response']['client_id']
-        self.request_id = resp['response']['request_id']
-        self.steam_id = SteamID(resp['response']['steamid'])
-        self.allowed_confirmations = [EAuthSessionGuardType(confirm_type['confirmation_type']) for confirm_type in resp['response']['allowed_confirmations']]
+        try:
+            self.client_id = resp['response']['client_id']
+            self.request_id = resp['response']['request_id']
+            self.steam_id = SteamID(resp['response']['steamid'])
+            self.allowed_confirmations = [EAuthSessionGuardType(confirm_type['confirmation_type']) for confirm_type in resp['response']['allowed_confirmations']]
+        except KeyError as e:
+            if resp.get('response', {}).get('interval') == EResult.InvalidPassword:
+                raise LoginIncorrect(resp)
+            else:
+                raise WebAuthException(e, resp)
 
     def _startLoginSession(self):
         """Starts login session via credentials."""
