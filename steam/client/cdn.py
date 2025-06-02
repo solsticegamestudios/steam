@@ -113,6 +113,7 @@ from steam.utils.web import make_requests_session
 from steam.core.crypto import symmetric_decrypt, symmetric_decrypt_ecb
 from steam.core.manifest import DepotManifest, DepotFile
 from steam.protobufs.content_manifest_pb2 import ContentManifestPayload
+from zstandard import decompress as ZSTDDecompress
 import lzma
 
 
@@ -668,6 +669,18 @@ class CDNClient:
                 data = vzdec.decompress(data[12:-9])[:decompressed_size]
                 if crc32(data) != checksum:
                     raise SteamError("VZ: CRC32 checksum doesn't match for decompressed data")
+            elif data[:3] == b'VSZ':
+                if data[-3:] != b'zsv':
+                    raise SteamError("%s %s VSZ: Invalid footer: %s" % (self.path, chunk_id, repr(data[-2:])))
+                if data[3:4] != b'a':
+                    raise SteamError("%s %s VSZ: Invalid version: %s" % (self.path, chunk_id, repr(data[2:3])))
+
+                crc32_header = struct.unpack_from('<I', data, 4)[0]
+                crc32_footer = struct.unpack_from('<I', data, -15)[0]
+                size_decompressed = struct.unpack_from('<I', data, -11)[0]
+                data = ZSTDDecompress(data[8 : -15])[:size_decompressed]
+                if crc32(data) != crc32_header != crc32_footer:
+                    raise SteamError("%s %s VSZ: CRC32 checksum doesn't match for decompressed data" % (self.path, chunk_id))
             else:
                 with ZipFile(BytesIO(data)) as zf:
                     data = zf.read(zf.filelist[0])
