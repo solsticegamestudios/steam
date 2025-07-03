@@ -2,7 +2,7 @@ A python module for interacting with various parts of Steam_.
 
 A fork of `ValvePython/steam <https://github.com/ValvePython/steam>`_, which has apparently been abandoned.
 
-Supports Python ``3.8+``.
+Currently supports Python ``3.10``, ``3.11``, and ``3.12``. We intend to support Python ``3.9-3.13`` and PyPy ``3.11``.
 
 Documentation (**WARNING** - out of date): http://steam.readthedocs.io/en/latest/
 
