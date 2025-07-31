@@ -1,3 +1,15 @@
+Looking for maintainers!
+------------------------
+The original reason for forking this repo and taking on the burden of maintaining it was to support a tool we make called `GModCEFCodecFix <https://github.com/solsticegamestudios/GModCEFCodecFix>`_.
+
+However, we've since migrated that tool to `Rust <https://www.rust-lang.org/>`_.
+
+We're a small developer with limited resources and manpower, and since we're no longer using this fork in any of our projects, it has become difficult to maintain it.
+
+If you're interested in helping out, `please let us know <contact@solsticegamestudios.com>`_! **PRs are welcome**, active maintainers even more so.
+
+About
+-----
 A python module for interacting with various parts of Steam_.
 
 A fork of `ValvePython/steam <https://github.com/ValvePython/steam>`_, which has apparently been abandoned.
