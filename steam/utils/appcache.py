@@ -76,25 +76,19 @@ def parse_appinfo(fp, mapper=None):
 #   char[]   - Null-terminated strings corresponding to field names
 
     magic = fp.read(4)
-    if magic not in (b"'DV\x07", b"(DV\x07", b")DV\x07"):
+    if magic[1:] != b"DV\x07":
         raise SyntaxError("Invalid magic, got %s" % repr(magic))
 
-    universe = uint32.unpack(fp.read(4))[0]
+    appinfo_version = magic[0]
+    if appinfo_version < 39 or appinfo_version > 43:
+        raise SyntaxError("Invalid version, got %d" % appinfo_version)
 
+    universe = uint32.unpack(fp.read(4))[0]
     key_table = None
 
-    appinfo_version = magic[0]
-    if appinfo_version >= 41:  # b')'
-        # appinfo.vdf V29 and newer store list of keys in separate table at the
-        # end of the file to reduce size. Retrieve it and pass it to the VDF
-        # parser later.
+
+    def read_key_table(key_count):
         key_table = []
-
-        key_table_offset = struct.unpack('q', fp.read(8))[0]
-        offset = fp.tell()
-        fp.seek(key_table_offset)
-        key_count = uint32.unpack(fp.read(4))[0]
-
         # Read all null-terminated strings into a list
         for _ in range(0, key_count):
             field_name = bytearray()
@@ -107,10 +101,52 @@ def parse_appinfo(fp, mapper=None):
 
                     key_table.append(field_name)
                     break
+        return key_table
 
-        # Rewind to the beginning of the file after the header:
-        # we can now parse the rest of the file.
-        fp.seek(offset)
+
+    def app_shards_iter():
+        _shard_index = uint32.unpack(fp.read(4))[0]
+        _shard_count = uint32.unpack(fp.read(4))[0]
+        app_count = uint32.unpack(fp.read(4))[0]
+        index_size = uint32.unpack(fp.read(4))[0]
+        key_count = uint32.unpack(fp.read(4))[0]
+        key_table_size = uint32.unpack(fp.read(4))[0]
+        _data_size = uint32.unpack(fp.read(4))[0]
+        _checksum_index = uint32.unpack(fp.read(4))[0]
+        _checksum_header = uint32.unpack(fp.read(4))[0]
+
+        index_pos = fp.tell()
+        key_pos = index_pos + index_size
+        data_pos = key_pos + key_table_size
+
+        fp.seek(key_pos)
+        key_table = read_key_table(key_count)
+
+        fp.seek(index_pos)
+        for _ in range(0, app_count):
+            appid = uint32.unpack(fp.read(4))[0]
+            data_offset = uint32.unpack(fp.read(4))[0]
+            _data_size = uint32.unpack(fp.read(4))[0]
+            summary_size = uint32.unpack(fp.read(4))[0]
+            next_entry = fp.tell() + summary_size
+
+            app = {
+                'appid': appid,
+                'size': summary_size,
+                'change_number': uint32.unpack(fp.read(4))[0],
+                'last_updated': uint32.unpack(fp.read(4))[0],
+                'access_token': uint64.unpack(fp.read(8))[0],
+                'info_state': fp.read(1)[0],
+                'sha1': fp.read(20),
+            }
+
+            fp.seek(data_pos + data_offset)
+            app['data_sha1'] = fp.read(20)
+            app['data'] = binary_load(fp, key_table=key_table, mapper=mapper)
+            fp.seek(next_entry)
+
+            yield app
+
 
     def apps_iter():
         while True:
@@ -138,6 +174,29 @@ def parse_appinfo(fp, mapper=None):
 
             yield app
 
+
+    if appinfo_version >= 42:
+        return ({
+                'magic': magic,
+                'universe': universe,
+                },
+                app_shards_iter()
+                )
+
+    if appinfo_version >= 41:  # b')'
+        # appinfo.vdf V29 and newer store list of keys in separate table at the
+        # end of the file to reduce size. Retrieve it and pass it to the VDF
+        # parser later.
+        key_table_offset = struct.unpack('q', fp.read(8))[0]
+        offset = fp.tell()
+        fp.seek(key_table_offset)
+        key_count = uint32.unpack(fp.read(4))[0]
+
+        key_table = read_key_table(key_count)
+
+        # Rewind to the beginning of the file after the header:
+        # we can now parse the rest of the file.
+        fp.seek(offset)
 
     return ({
               'magic': magic,
